@@ -62,13 +62,18 @@ class Tools:
     ) -> str:
         """
         Search paperless-ngx documents by full-text query with optional filters.
-        Use this to find documents matching keywords, filtered by tag, sender,
-        type, or date range. Returns document titles, dates, and content excerpts.
+        Returns document titles, dates, and full content for analysis.
 
-        :param query: Full-text search term (e.g. "oil change", "grocery receipt", "electric bill")
-        :param tag: Optional tag name to filter by (e.g. "invoice", "vehicle-maintenance")
-        :param correspondent: Optional correspondent/sender name to filter by (e.g. "Valvoline", "PG&E")
-        :param document_type: Optional document type to filter by (e.g. "Invoice", "Receipt", "Statement")
+        IMPORTANT search tips:
+        - Use simple keywords without punctuation or apostrophes (e.g. "woodman" not "Woodman's")
+        - Start with just the query parameter — only add filters if you get too many results
+        - The query searches full document text content, not just titles
+        - Do NOT assume document type names — use list_document_types first if you need to filter by type
+
+        :param query: Simple keyword search (e.g. "woodman", "oil change", "electric bill")
+        :param tag: Optional tag name filter — only use if you know the exact tag name
+        :param correspondent: Optional correspondent name filter — only use if you know the exact name
+        :param document_type: Optional document type filter — only use if you know the exact type name
         :param date_from: Optional start date in YYYY-MM-DD format (e.g. "2026-03-01")
         :param date_to: Optional end date in YYYY-MM-DD format (e.g. "2026-03-31")
         """
