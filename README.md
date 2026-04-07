@@ -71,15 +71,28 @@ Each user can adjust in the chat interface:
 |---------|-------------|---------|
 | `max_results` | Max documents per search | `10` |
 
-### API Token Requirements
+### API Token Setup
 
-The paperless-ngx user tied to the API token needs at minimum:
-- Documents: View
-- Tags: View
-- Correspondents: View
-- Document Types: View
+Create a dedicated user in paperless-ngx for the Open WebUI tool:
 
-Or simplest: grant **Superuser status** to the API token user.
+1. In paperless-ngx UI, go to **Settings > Users & Groups**
+2. Create a new user (e.g. `open-webui`)
+3. Grant **Superuser status** (needs to read all documents, tags, correspondents, types)
+4. Generate an API token: **Settings > Django Admin** (or `/admin/`) > **Authorisation Tokens > Add** — select the user, save, copy the token
+5. Enter the token in Open WebUI: **Workspace > Tools > Paperless-ngx Document Search > gear icon > api_token**
+
+Using a dedicated user (rather than sharing with other integrations) keeps audit trails distinct.
+
+Without superuser, the minimum permissions are:
+
+| Category | Permission |
+|----------|-----------|
+| Documents | View |
+| Tags | View |
+| Correspondents | View |
+| Document Types | View |
+
+**Note:** Object-level permissions in paperless-ngx mean the user must also have visibility on individual documents, tags, etc. Superuser bypasses this entirely.
 
 ## Model Configuration
 
