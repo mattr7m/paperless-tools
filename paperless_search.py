@@ -151,15 +151,13 @@ class Tools:
 
         lines = [f"Found {data['count']} document(s) (showing {len(results)}):"]
         for doc in results:
-            title = doc.get("title", f"Document {doc['id']}")
+            doc_id = doc["id"]
+            title = doc.get("title", f"Document {doc_id}")
             created = doc.get("created", "unknown date")[:10]
-            correspondent_name = ""
-            if doc.get("correspondent"):
-                correspondent_name = f" | from: correspondent ID {doc['correspondent']}"
-            content = doc.get("content", "")[:2000]
+            content = doc.get("content", "")[:3000]
 
-            lines.append(f"\n### {title}")
-            lines.append(f"**Date:** {created}{correspondent_name}")
+            lines.append(f"\n### Document ID {doc_id}: {title}")
+            lines.append(f"**Date:** {created} | **Document ID:** {doc_id}")
             lines.append(f"**Content:**\n{content}")
             lines.append("---")
 
