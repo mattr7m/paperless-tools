@@ -65,12 +65,16 @@ class Tools:
         Returns document titles, dates, and full content for analysis.
 
         IMPORTANT search tips:
-        - Use simple keywords without punctuation or apostrophes (e.g. "woodman" not "Woodman's")
-        - Start with just the query parameter — only add filters if you get too many results
-        - The query searches full document text content, not just titles
-        - Do NOT assume document type names — use list_document_types first if you need to filter by type
+        - Use 1-2 simple keywords that would literally appear in the document text
+        - Do NOT use words the user said that wouldn't be in the document (e.g. "upcoming", "recent", "my")
+        - Remove punctuation and apostrophes (e.g. "woodman" not "Woodman's")
+        - The search uses AND logic — all words must be present in the document
+        - Start with just the query — only add filters if you get too many results
+        - Do NOT assume document type names — use list_document_types first if filtering by type
+        - For questions about events, search for the location or event type, not "upcoming" or "coming up"
+        - For questions about spending, search for the store name, not "spend" or "purchase"
 
-        :param query: Simple keyword search (e.g. "woodman", "oil change", "electric bill")
+        :param query: 1-2 keywords that appear in the document (e.g. "waterloo events", "oil change", "electric bill")
         :param tag: Optional tag name filter — only use if you know the exact tag name
         :param correspondent: Optional correspondent name filter — only use if you know the exact name
         :param document_type: Optional document type filter — only use if you know the exact type name
@@ -107,6 +111,34 @@ class Tools:
             return data  # error message
 
         results = data.get("results", [])
+
+        # Fallback: if no results and query has multiple words, retry with fewer words
+        if not results and " " in query:
+            words = query.split()
+            for word in words:
+                if len(word) < 3:
+                    continue
+                fallback_params = {**params, "query": word}
+                fallback_data = await self._api_get(
+                    "/api/documents/", fallback_params, None
+                )
+                if isinstance(fallback_data, str):
+                    continue
+                fallback_results = fallback_data.get("results", [])
+                if fallback_results:
+                    results = fallback_results
+                    data = fallback_data
+                    if __event_emitter__:
+                        await __event_emitter__(
+                            {
+                                "type": "status",
+                                "data": {
+                                    "description": f"No results for '{query}', found {data.get('count', 0)} with '{word}'",
+                                    "done": False,
+                                },
+                            }
+                        )
+                    break
 
         # Emit citations for each document
         if __event_emitter__:
