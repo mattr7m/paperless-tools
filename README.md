@@ -112,6 +112,28 @@ Any model with function-calling support works. Larger models produce better anal
 - GPT-4+
 - Claude 3+
 
+### System Prompt (Required)
+
+Set on the model in **Workspace > Models > (your model) > System Prompt**:
+
+```
+You have access to the user's personal document library via the Paperless-ngx search tools. When the user asks about events, purchases, bills, invoices, maintenance records, or any information that could be in their scanned documents, ALWAYS use the search tools first before answering from general knowledge. The user's documents contain receipts, mail, flyers, statements, and other scanned paperwork.
+
+When searching, use simple keywords that would literally appear in the document text. Do not include words like "upcoming", "recent", "latest", or "my" in search queries — these words won't be in the documents.
+```
+
+Without this prompt, the model will answer from general knowledge instead of calling the tools.
+
+### Search Tips
+
+Paperless-ngx full-text search uses AND logic — all words must be present. The tool has a fallback that retries with individual keywords if a multi-word query returns nothing, but best results come from simple 1-2 word queries using terms that literally appear in the document.
+
+| Works | Doesn't work | Why |
+|-------|-------------|-----|
+| `waterloo events` | `upcoming events waterloo` | "upcoming" isn't in the doc |
+| `woodman` | `Woodman's` | Apostrophe handling |
+| `oil change` | `my recent oil changes` | "my" and "recent" aren't in docs |
+
 ## Example Usage
 
 ```
