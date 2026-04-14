@@ -62,13 +62,22 @@ class Tools:
     ) -> str:
         """
         Search paperless-ngx documents by full-text query with optional filters.
-        Use this to find documents matching keywords, filtered by tag, sender,
-        type, or date range. Returns document titles, dates, and content excerpts.
+        Returns document titles, dates, and full content for analysis.
 
-        :param query: Full-text search term (e.g. "oil change", "grocery receipt", "electric bill")
-        :param tag: Optional tag name to filter by (e.g. "invoice", "vehicle-maintenance")
-        :param correspondent: Optional correspondent/sender name to filter by (e.g. "Valvoline", "PG&E")
-        :param document_type: Optional document type to filter by (e.g. "Invoice", "Receipt", "Statement")
+        IMPORTANT search tips:
+        - Use 1-2 simple keywords that would literally appear in the document text
+        - Do NOT use words the user said that wouldn't be in the document (e.g. "upcoming", "recent", "my")
+        - Remove punctuation and apostrophes (e.g. "woodman" not "Woodman's")
+        - The search uses AND logic — all words must be present in the document
+        - Start with just the query — only add filters if you get too many results
+        - Do NOT assume document type names — use list_document_types first if filtering by type
+        - For questions about events, search for the location or event type, not "upcoming" or "coming up"
+        - For questions about spending, search for the store name, not "spend" or "purchase"
+
+        :param query: 1-2 keywords that appear in the document (e.g. "waterloo events", "oil change", "electric bill")
+        :param tag: Optional tag name filter — only use if you know the exact tag name
+        :param correspondent: Optional correspondent name filter — only use if you know the exact name
+        :param document_type: Optional document type filter — only use if you know the exact type name
         :param date_from: Optional start date in YYYY-MM-DD format (e.g. "2026-03-01")
         :param date_to: Optional end date in YYYY-MM-DD format (e.g. "2026-03-31")
         """
@@ -102,6 +111,34 @@ class Tools:
             return data  # error message
 
         results = data.get("results", [])
+
+        # Fallback: if no results and query has multiple words, retry with fewer words
+        if not results and " " in query:
+            words = query.split()
+            for word in words:
+                if len(word) < 3:
+                    continue
+                fallback_params = {**params, "query": word}
+                fallback_data = await self._api_get(
+                    "/api/documents/", fallback_params, None
+                )
+                if isinstance(fallback_data, str):
+                    continue
+                fallback_results = fallback_data.get("results", [])
+                if fallback_results:
+                    results = fallback_results
+                    data = fallback_data
+                    if __event_emitter__:
+                        await __event_emitter__(
+                            {
+                                "type": "status",
+                                "data": {
+                                    "description": f"No results for '{query}', found {data.get('count', 0)} with '{word}'",
+                                    "done": False,
+                                },
+                            }
+                        )
+                    break
 
         # Emit citations for each document
         if __event_emitter__:
@@ -151,15 +188,13 @@ class Tools:
 
         lines = [f"Found {data['count']} document(s) (showing {len(results)}):"]
         for doc in results:
-            title = doc.get("title", f"Document {doc['id']}")
+            doc_id = doc["id"]
+            title = doc.get("title", f"Document {doc_id}")
             created = doc.get("created", "unknown date")[:10]
-            correspondent_name = ""
-            if doc.get("correspondent"):
-                correspondent_name = f" | from: correspondent ID {doc['correspondent']}"
-            content = doc.get("content", "")[:2000]
+            content = doc.get("content", "")[:3000]
 
-            lines.append(f"\n### {title}")
-            lines.append(f"**Date:** {created}{correspondent_name}")
+            lines.append(f"\n### Document ID {doc_id}: {title}")
+            lines.append(f"**Date:** {created} | **Document ID:** {doc_id}")
             lines.append(f"**Content:**\n{content}")
             lines.append("---")
 
